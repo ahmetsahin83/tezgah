@@ -143,7 +143,10 @@ flowchart LR
 - **Onaysız çalışma (isteğe bağlı):** Ayarlar › Claude › "Ajanlar onay istemesin" açıkken Claude oturumları
   `--dangerously-skip-permissions`, Codex oturumları `--dangerously-bypass-approvals-and-sandbox` ile açılır; orkestra ve
   lider ajanın işleri izin beklemeden yürür.
-- **MCP sunucuları:** Ayarlar'dan Claude'a MCP sunucusu eklenir; Sentry, Linear, Context7 ve GitHub hazır gelir.
+- **Oturum ayarları:** çalışan bir Claude oturumunun izin modu (Her şeyi sor / Düzenlemeleri kabul et / Plan /
+  Otomatik / Tam yetki), modeli ve düşünme seviyesi sekmenin üstünden değiştirilir.
+- **MCP sunucuları:** Ayarlar › MCP Sunucuları'ndan Claude'a MCP sunucusu eklenir; Sentry, Linear, Context7 ve GitHub
+  hazır gelir.
 
 ### Lider ajan
 
@@ -169,9 +172,9 @@ sohbetin yanında açılır.
 
 | Araç | Neler yapılabilir |
 |---|---|
-| Tarayıcı | Aç, oku, tıkla, yaz, ekran görüntüsü, konsol, cihaz boyutu |
-| iOS Simülatörü | Aç, kur, başlat, ekran görüntüsü, dokun, kaydır, yaz, loglar |
-| Pano | Kartları listele, ekle, taşı |
+| Tarayıcı | Aç, oku, tıkla, yaz, kaydır, JavaScript çalıştır, ekran görüntüsü, konsol, cihaz boyutu |
+| iOS Simülatörü | Cihazları listele, aç, kur, başlat, ekran görüntüsü, erişilebilirlik ağacı, dokun, kaydır, yaz, donanım tuşları, URL aç, açık / koyu görünüm, loglar |
+| Pano | Kartları listele, ekle, düzenle, taşı |
 | Veritabanı | Bağlantılar, şema, sorgu. Veri değiştiren her komut için kimin istediğini gösteren onay |
 | Terminal | Komut çalıştır, çıktısını oku, durdur. Dev sunucusu gibi uzun işler kendi terminalinde |
 | Editör | Açık dosya, imleç, seçili metin; dosyayı editörde açma |
@@ -207,8 +210,8 @@ olmalı.
   (mesajı yanıtlamak cevaplar ve kartı baştan başlatır), sıra bitti ya da durdu, ajan onay bekliyor (İzin Ver / Bir Daha
   Sorma / Reddet). Veritabanı değiştirme onayı Mac'teki pencereyle aynı anda telefona da gelir; hangisi önce yanıtlanırsa
   o geçer.
-- **Komutlar:** `/durum`, `/kartlar` (her kart için Başlat / Koşu / Durdur / Baştan), `/kart Başlık`, `/sira`,
-  `/projeler`, `/proje ad`.
+- **Komutlar:** `/durum`, `/kartlar` (her kart için Başlat / Koşu / Devam / Durdur / Baştan), `/kart Başlık`, `/sira`,
+  `/projeler`, `/proje ad`, `/yardim`.
 - **Gizlilik:** yalnızca eşleşen hesap dinlenir; mesajlarda özet olur, kod ve sorgu sonuçları gönderilmez.
 
 Kurulum: Ayarlar › Telegram'da bot token'ını yapıştır, çıkan kodu bota gönder. Bot eşleşmişken Mac uyumaz (Ayarlar'dan
@@ -257,17 +260,31 @@ PostgreSQL, MySQL / MariaDB ve SQLite; proje başına bağlantılar, parolalar K
 
 ## Kurulum
 
+### İndir
+
+[Releases](https://github.com/ahmetsahin83/tezgah/releases/latest) sayfasından son sürümün `.dmg` dosyasını indir, aç ve
+**Tezgah**'ı **Applications** klasörüne sürükle.
+
+> [!NOTE]
+> Tezgah ad-hoc imzalı ve Apple tarafından notarize edilmedi. İlk açılışta macOS uygulamayı engellerse
+> Sistem Ayarları › Gizlilik ve Güvenlik'teki **Yine de Aç**'a bas ya da karantina işaretini kaldır:
+>
+> ```bash
+> xattr -dr com.apple.quarantine /Applications/Tezgah.app
+> ```
+
 ### Gereksinimler
 
 | | Gerekenler |
 |---|---|
-| **Zorunlu** | macOS 14 Sonoma ya da üstü, Xcode (Swift 6) |
+| **Zorunlu** | macOS 14 Sonoma ya da üstü; hazır DMG yalnızca Apple Silicon (M serisi) Mac'lerde çalışır |
+| **Kaynaktan derlemek için** | Xcode (Swift 6) |
 | **Ajanlar için** | [Claude Code](https://claude.com/claude-code) (`curl -fsSL https://claude.ai/install.sh \| bash`) ve/veya [Codex](https://github.com/openai/codex) (`brew install codex`) |
 | **İsteğe bağlı** | [ripgrep](https://github.com/BurntSushi/ripgrep) (daha hızlı proje araması), [AXe](https://github.com/cameroncooke/AXe) (simülatörde dokunma: `brew install cameroncooke/axe/axe`) |
 
 AXe kurulu değilse Cihaz sekmesindeki **AXe'yi Kur** butonu kurulumu bir terminalde başlatır.
 
-### Derle ve kur
+### Kaynaktan derle
 
 ```bash
 git clone https://github.com/ahmetsahin83/tezgah.git
@@ -280,6 +297,7 @@ make install    # release derler, ad-hoc imzalar ve /Applications altına kopyal
 | `make run` | Release derler, `build/Tezgah.app` oluşturur ve açar |
 | `make install` | Uygulamayı `/Applications` altına kopyalar |
 | `make app` | Sadece `.app` paketini oluşturur |
+| `make dmg` | `.app`'i `build/Tezgah-<sürüm>.dmg` olarak paketler |
 | `make icon` | `Support/AppIcon.icns`'i `Support/make-icon.swift`'ten yeniden üretir |
 | `make clean` | Derleme çıktılarını siler |
 
@@ -291,7 +309,7 @@ make install    # release derler, ad-hoc imzalar ve /Applications altına kopyal
 | Kısayol | İşlem |
 |---|---|
 | <kbd>⌘K</kbd> | Ara ya da Claude'a sor: dosya, komut (`>`) ya da yazdığını Claude'a gönder |
-| <kbd>⌘P</kbd> | Hızlı aç (`dosya:42` ile satıra git, `:42` açık dosyada) |
+| <kbd>⌘P</kbd> | Hızlı aç, <kbd>⌘K</kbd> ile aynı panel (`dosya:42` ile satıra git, `:42` açık dosyada) |
 | <kbd>⇧⌘P</kbd> | Komut paleti (Hızlı Aç'ta `>` ile de açılır) |
 | <kbd>⇧⌘F</kbd> | Projede ara (seçili metinle açılır; regex, tam kelime, dosya filtresi) |
 | <kbd>⌘R</kbd> | Son proje komutunu tekrar çalıştır |
@@ -315,7 +333,7 @@ make install    # release derler, ad-hoc imzalar ve /Applications altına kopyal
 | <kbd>⌘S</kbd> | Dosyayı kaydet |
 | <kbd>⌥⌘S</kbd> | Tümünü kaydet |
 | <kbd>⌘\\</kbd> | Yan yana böl / bölmeyi kapat (sekmeye sağ tık: "Yan Tarafta Aç") |
-| <kbd>⇧⌘V</kbd> | Markdown önizleme (kaynak / yan yana / önizleme) |
+| <kbd>⇧⌘V</kbd> | Markdown önizleme: kaynak ↔ yan yana (yalnızca önizleme sekmedeki seçiciden) |
 | <kbd>⌘F</kbd> | Editörde bul |
 | <kbd>⌘/</kbd> | Satırı yorum yap / kaldır |
 | <kbd>⌘[</kbd> / <kbd>⌘]</kbd> | Girintiyi azalt / artır |
@@ -408,8 +426,8 @@ TEZGAH_SUPPORT_DIR=/tmp/tezgah-dev .build/debug/Tezgah
 ### Arayüz otomasyonu
 
 Debug derlemelerde `TEZGAH_DEBUG_DIR` verilirse uygulama o klasöre bırakılan `*.cmd` dosyalarını çalıştırır (`snapshot`,
-`type`, `insert`, `send`, `key`, `press`, `keys`, `menu`, `view`, `appearance`, `size`, `event`, `js`, `overview`,
-`windows`, `activate`). Böylece ekran kaydı izni olmadan arayüz kontrol edilebilir. Ayrıntılar
+`type`, `send`, `key`, `press`, `click`, `scroll`, `keys`, `menu`, `view`, `appearance`, `size`, `tab`, `js`, `card`,
+`overview` ve diğerleri). Böylece ekran kaydı izni olmadan arayüz kontrol edilebilir. Ayrıntılar
 [`Sources/Tezgah/Debug/DebugAutomation.swift`](Sources/Tezgah/Debug/DebugAutomation.swift) içinde.
 
 ### Sürüm çıkarma
@@ -424,6 +442,13 @@ tag'i taşır. Değişiklikler [CHANGELOG.md](CHANGELOG.md)'de tutulur.
 ```bash
 git tag -a v1.1.0 -m "Tezgah 1.1.0"
 git push origin main v1.1.0
+```
+
+4. DMG'yi üret ve sürümün GitHub release'ine ekle (notlara `CHANGELOG.md`'deki bölümü yaz):
+
+```bash
+make dmg
+gh release create v1.1.0 build/Tezgah-1.1.0.dmg --title "Tezgah 1.1.0"
 ```
 
 ## Yol haritası
