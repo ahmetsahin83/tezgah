@@ -26,10 +26,7 @@
   <a href="#lisans">Lisans</a>
 </p>
 
-<!-- EKRAN GÖRÜNTÜSÜ (ana pencere): editör, terminal, git paneli ve Claude sohbeti bir arada.
-     Görseli docs/screenshots/ana-pencere.png olarak kaydet, sonra alttaki satırı bu yorumun dışına taşı.
 <p align="center"><img src="docs/screenshots/ana-pencere.png" width="900" alt="Tezgah ana pencere"></p>
--->
 
 ---
 
@@ -65,10 +62,7 @@ flowchart LR
     M --> B["Bitti"]
 ```
 
-<!-- EKRAN GÖRÜNTÜSÜ (koşu sayfası): aşamalar, ajan kartları ve adım adım akış.
-     Görseli docs/screenshots/kosu-sayfasi.png olarak kaydet, sonra alttaki satırı bu yorumun dışına taşı.
 <p align="center"><img src="docs/screenshots/kosu-sayfasi.png" width="900" alt="Orkestra koşu sayfası"></p>
--->
 
 - **Planlayıcı** (Claude ya da Codex, salt okunur) kartı okur, kodu tarar ve `plan_ready` ile bir plan verir: işi nasıl
   anladığı, yaklaşım, "bitti" ölçütleri, işe dahil edilen küçük katkılar ve ayrı iş önerileri. Plan kartta saklanır;
@@ -120,10 +114,7 @@ flowchart LR
 
 ### Claude Code ve Codex
 
-<!-- EKRAN GÖRÜNTÜSÜ (Claude sohbeti): sohbet görünümü, satır içi diff'ler, composer.
-     Görseli docs/screenshots/claude-sohbet.png olarak kaydet, sonra alttaki satırı bu yorumun dışına taşı.
 <p align="center"><img src="docs/screenshots/claude-sohbet.png" width="900" alt="Claude sohbet görünümü"></p>
--->
 
 - **Sohbet görünümü:** transkriptten canlı konuşma; markdown, renkli kod, satır içi diff'ler, katlanan komut ve okuma
   adımları, sabit yapılacaklar çubuğu, canlı alt ajan adımları, dosya linkleri. Bash komutlarını ve `bash` kod bloklarını
@@ -185,10 +176,7 @@ sonucuyla birlikte kartın akışına da düşer.
 
 ### Proje panosu
 
-<!-- EKRAN GÖRÜNTÜSÜ (pano): Yapılacak / Yapılıyor / Bitti sütunları, orkestradaki kartlar.
-     Görseli docs/screenshots/pano.png olarak kaydet, sonra alttaki satırı bu yorumun dışına taşı.
 <p align="center"><img src="docs/screenshots/pano.png" width="900" alt="Proje panosu"></p>
--->
 
 - Yapılacak / Yapılıyor / Bitti sütunları, sürükle-bırak, tek tıkla bitti, notlar.
 - **Claude'a ver:** kart prompt olur ve Yapılıyor'a geçer.
@@ -238,10 +226,7 @@ kapatılabilir).
 
 PostgreSQL, MySQL / MariaDB ve SQLite; proje başına bağlantılar, parolalar Keychain'de.
 
-<!-- EKRAN GÖRÜNTÜSÜ (veritabanı): SQL editörü, otomatik tamamlama ve sonuç tablosu.
-     Görseli docs/screenshots/veritabani.png olarak kaydet, sonra alttaki satırı bu yorumun dışına taşı.
 <p align="center"><img src="docs/screenshots/veritabani.png" width="900" alt="Veritabanı sekmesi"></p>
--->
 
 - `.env` içindeki `DATABASE_URL`'i ve projedeki SQLite dosyalarını bağlantı olarak önerir. SSH tüneli desteklenir.
 - **SQL editörü:** FROM / JOIN sonrası tablolar, ifadedeki tabloların kolonları, `alias.` üyeleri, foreign key'e göre hazır
