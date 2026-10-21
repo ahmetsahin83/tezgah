@@ -134,6 +134,10 @@ flowchart LR
 - **Onaysız çalışma (isteğe bağlı):** Ayarlar › Claude › "Ajanlar onay istemesin" açıkken Claude oturumları
   `--dangerously-skip-permissions`, Codex oturumları `--dangerously-bypass-approvals-and-sandbox` ile açılır; orkestra ve
   lider ajanın işleri izin beklemeden yürür.
+- **Başında beklemeden (varsayılan açık):** Ayarlar › Claude › "Ajanlar kendi başına yürüsün" açıkken ajanın açıldığı
+  klasöre (worktree ve ana depo dahil) önceden güvenilir, "Trust this folder?" ekranı çıkmaz; Codex'in güncelleme ekranı
+  atlanır. Kullanım limiti dolan ajan ekranından okunan sıfırlanma saatini bekler ve kendiliğinden devam eder; Claude'un
+  limit menüsünde beklemeyi seçer, Telegram bağlıysa haber verir. Beklenen süre orkestra adımının süre sınırına sayılmaz.
 - **Oturum ayarları:** çalışan bir Claude oturumunun izin modu (Her şeyi sor / Düzenlemeleri kabul et / Plan /
   Otomatik / Tam yetki), modeli ve düşünme seviyesi sekmenin üstünden değiştirilir.
 - **MCP sunucuları:** Ayarlar › MCP Sunucuları'ndan Claude'a MCP sunucusu eklenir; Sentry, Linear, Context7 ve GitHub

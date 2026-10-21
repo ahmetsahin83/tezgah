@@ -12,7 +12,12 @@ SWIFT_FLAGS := $(if $(filter release,$(CONFIG)),-debug-info-format none)
 build:
 	swift build -c $(CONFIG) $(SWIFT_FLAGS)
 
-# Wraps the SwiftPM executable in a signed (ad-hoc) .app bundle.
+# Signed with the first Apple Development certificate in the Keychain, if there is one: the
+# Keychain then knows the app across builds and "Always Allow" on its password prompts sticks.
+# Ad hoc otherwise, which the Keychain sees as a new app after every build.
+SIGN_IDENTITY ?= $(or $(shell security find-identity -v -p codesigning 2>/dev/null | grep -m1 -o '"Apple Development:[^"]*"' | tr -d '"'),-)
+
+# Wraps the SwiftPM executable in a signed .app bundle.
 app: build
 	rm -rf "$(APP)"
 	mkdir -p "$(APP)/Contents/MacOS" "$(APP)/Contents/Resources"
@@ -23,7 +28,7 @@ app: build
 	done
 	cp Support/Info.plist "$(APP)/Contents/Info.plist"
 	cp Support/AppIcon.icns "$(APP)/Contents/Resources/"
-	codesign --force --sign - "$(APP)"
+	codesign --force --sign "$(SIGN_IDENTITY)" "$(APP)"
 
 # A disk image with the app and a shortcut to /Applications, for GitHub releases.
 dmg: app

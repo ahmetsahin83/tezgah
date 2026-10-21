@@ -28,10 +28,12 @@ final class CodexMonitor {
     /// `mcpURL` adds Tezgah's tools; the token comes from `TEZGAH_MCP_TOKEN` in the tab's environment.
     /// `prompt` is sent as the first message of a new session. `readOnly` runs its commands in
     /// Codex's read-only sandbox, for a reviewer. `skipPermissions` never asks for approval and runs
-    /// without a sandbox, reviewers included, so they can build and test.
+    /// without a sandbox, reviewers included, so they can build and test. `trustedFolders` are
+    /// trusted for this session (see `AgentTrust`).
     func command(
         for launch: AgentLaunch, codexPath: String, shell: String, thenShell: Bool = true, mcpURL: String? = nil,
-        prompt: String? = nil, model: String? = nil, effort: String? = nil, readOnly: Bool = false, skipPermissions: Bool = false
+        prompt: String? = nil, model: String? = nil, effort: String? = nil, readOnly: Bool = false, skipPermissions: Bool = false,
+        trustedFolders: [String] = []
     ) -> String {
         var parts = [AgentMonitor.quote(codexPath)]
         switch launch {
@@ -54,7 +56,9 @@ final class CodexMonitor {
         } else if readOnly {
             parts += ["--sandbox", "read-only"]
         }
-        for override in overrides(mcpURL: mcpURL) {
+        var overrides = overrides(mcpURL: mcpURL)
+        if let trust = AgentTrust.codexOverride(for: trustedFolders) { overrides.append(trust) }
+        for override in overrides {
             parts += ["-c", AgentMonitor.quote(override)]
         }
         if case .resume(let id) = launch {
@@ -81,6 +85,8 @@ final class CodexMonitor {
         // Codex guesses that fast typing is a paste and turns Return into a new line; Tezgah's
         // prompts arrive as bracketed pastes, which need no guessing.
         overrides.append("tui.disable_paste_burst=true")
+        // Its "Update available" screen waits for an answer before the session starts.
+        overrides.append("check_for_update_on_startup=false")
         if let mcpURL {
             overrides += [
                 "mcp_servers.tezgah.url=\(Self.tomlString(mcpURL))",

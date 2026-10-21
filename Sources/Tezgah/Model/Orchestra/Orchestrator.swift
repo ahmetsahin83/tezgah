@@ -232,7 +232,8 @@ extension WorkspaceStore {
         for run in orchestraRuns.values where run.isActive {
             guard let minutes = run.team.minutes(for: run.phase),
                   now.timeIntervalSince(run.phaseStartedAt) > Double(minutes) * 60,
-                  let project = projects.first(where: { $0.board.cards.contains { $0.id == run.cardID } }) else { continue }
+                  let project = projects.first(where: { $0.board.cards.contains { $0.id == run.cardID } }),
+                  !isWaitingForLimit(run, in: project) else { continue }
             let stage = RunStage.current(run.phase) ?? .develop
             if let developer = run.developerTab.flatMap({ claudeTab($0)?.session }), run.phase == .developing {
                 developer.sendClaudeKey(.escape)

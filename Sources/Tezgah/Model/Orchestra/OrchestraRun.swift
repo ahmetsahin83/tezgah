@@ -48,6 +48,11 @@ final class OrchestraRun {
     }
     /// When the run got where it is, for the step's time limit. After a restart the step starts over.
     private(set) var phaseStartedAt = Date()
+
+    /// Time an agent spent waiting for its usage limit to reset doesn't count against the step.
+    func extendPhase(by seconds: TimeInterval) {
+        phaseStartedAt += seconds
+    }
     private(set) var round = 1
     var developerTab: UUID?
     /// While planning: the planner's tab.

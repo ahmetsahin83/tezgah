@@ -165,8 +165,20 @@ extension DatabaseConfig {
 
 enum DatabasePasswords {
     private static let service = "dev.ahmetsahin.tezgah.database"
+    /// Read once per launch. Each Keychain read may ask for the login password (always so for an app
+    /// signed ad hoc, which the Keychain sees as a new app after every build), and an agent's
+    /// session reconnects often.
+    nonisolated(unsafe) private static var cache: [UUID: String?] = [:]
+    private static let lock = NSLock()
 
     static func password(for id: UUID) -> String? {
+        if let cached = lock.withLock({ cache[id] }) { return cached }
+        let password = readPassword(for: id)
+        lock.withLock { cache[id] = password }
+        return password
+    }
+
+    private static func readPassword(for id: UUID) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -186,6 +198,7 @@ enum DatabasePasswords {
             kSecAttrAccount as String: id.uuidString,
         ]
         SecItemDelete(item as CFDictionary)
+        lock.withLock { cache[id] = password?.isEmpty == false ? password : nil }
         guard let password, !password.isEmpty else { return }
         var added = item
         added[kSecValueData as String] = Data(password.utf8)

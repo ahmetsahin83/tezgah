@@ -52,6 +52,12 @@ final class AppSettings {
         didSet { save(agentsSkipPermissions, "agentsSkipPermissions") }
     }
 
+    /// Agents get past what would stop them with nobody at the Mac: the folders they open in are
+    /// trusted ahead, and one that hits its usage limit waits for the reset and goes on by itself.
+    var agentsRunUnattended: Bool {
+        didSet { save(agentsRunUnattended, "agentsRunUnattended") }
+    }
+
     /// While the Telegram bot is paired the Mac stays awake: asleep, it hears nothing.
     var telegramKeepsAwake: Bool {
         didSet { save(telegramKeepsAwake, "telegramKeepsAwake"); onTelegramAwakeChange?() }
@@ -71,6 +77,7 @@ final class AppSettings {
         tezgahTools = defaults.object(forKey: "tezgahTools") as? Bool ?? true
         claudeRemoteControl = defaults.object(forKey: "claudeRemoteControl") as? Bool ?? false
         agentsSkipPermissions = defaults.object(forKey: "agentsSkipPermissions") as? Bool ?? false
+        agentsRunUnattended = defaults.object(forKey: "agentsRunUnattended") as? Bool ?? true
         telegramKeepsAwake = defaults.object(forKey: "telegramKeepsAwake") as? Bool ?? true
     }
 

@@ -156,6 +156,9 @@ final class ClaudeMonitor {
         }
         // Tezgah's tools only show things inside Tezgah; asking before each would get in the way.
         var settings: [String: Any] = ["hooks": hooks, "permissions": ["allow": ["mcp__tezgah"]]]
+        // Full access is only ever turned on after Tezgah's own warning; Claude Code's would
+        // stop each new session at a dialog that defaults to "No, exit".
+        settings["skipDangerousModePermissionPrompt"] = true
         if includingStatusLine {
             settings["statusLine"] = ["type": "command", "command": AgentMonitor.quote(statusLineURL.path), "padding": 0]
         }

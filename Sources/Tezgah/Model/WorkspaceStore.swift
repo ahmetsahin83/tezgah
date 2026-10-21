@@ -81,6 +81,9 @@ final class WorkspaceStore {
         orchestraClock = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.checkOrchestraTimeouts() }
         }
+        agentLimitClock = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.watchAgentLimits() }
+        }
         mcpServer.start()
         do {
             try agentMonitor.start()
@@ -911,10 +914,12 @@ final class WorkspaceStore {
         readOnly: Bool = false,
         asksQuestions: Bool = true
     ) async -> TerminalSession {
-        let configDirectory = ClaudeMonitor.configDirectory(environment: await ShellEnvironment.shared.environment())
+        let shellEnvironment = await ShellEnvironment.shared.environment()
+        let configDirectory = ClaudeMonitor.configDirectory(environment: shellEnvironment)
         let ownStatusLine = ClaudeMonitor.hasOwnStatusLine(projectURL: project.url, configDirectory: configDirectory)
         let id = UUID()
         let directory = directory ?? project.url
+        await trustForClaude(directory, environment: shellEnvironment)
         let activity = ClaudeActivity()
         if case .resume(let sessionID) = launch { activity.resumes(session: sessionID) }
         activity.viewMode = AppSettings.shared.claudeOpensAsConversation ? .conversation : .terminal
@@ -998,7 +1003,8 @@ final class WorkspaceStore {
             title: "Codex",
             command: codexMonitor.command(
                 for: launch, codexPath: codexPath, shell: TerminalSession.userShell, mcpURL: toolsURL, prompt: prompt,
-                model: model, effort: effort, readOnly: readOnly, skipPermissions: AppSettings.shared.agentsSkipPermissions
+                model: model, effort: effort, readOnly: readOnly, skipPermissions: AppSettings.shared.agentsSkipPermissions,
+                trustedFolders: Self.trustedFolders(for: directory)
             ),
             environment: environment,
             agent: activity
@@ -1024,10 +1030,21 @@ final class WorkspaceStore {
             session.run(codexMonitor.command(
                 for: .resume(sessionID: sessionID), codexPath: codexPath, shell: TerminalSession.userShell,
                 thenShell: false, mcpURL: await toolsURL(forTab: session.id),
-                skipPermissions: AppSettings.shared.agentsSkipPermissions
+                skipPermissions: AppSettings.shared.agentsSkipPermissions, trustedFolders: Self.trustedFolders(for: session.directory)
             ))
             activity.restarting()
         }
+    }
+
+    /// Folders a new agent session trusts ahead, with the setting on.
+    static func trustedFolders(for directory: URL) -> [String] {
+        AppSettings.shared.agentsRunUnattended ? AgentTrust.folders(for: directory) : []
+    }
+
+    private func trustForClaude(_ directory: URL, environment: [String: String]) async {
+        guard AppSettings.shared.agentsRunUnattended else { return }
+        let configURL = AgentTrust.claudeConfigURL(environment: environment)
+        await Task.detached { AgentTrust.trustForClaude(directory, configURL: configURL) }.value
     }
 
     /// Held while any Claude session is reachable remotely: a sleeping Mac would freeze it on the phone too.
@@ -1059,8 +1076,10 @@ final class WorkspaceStore {
                 return
             }
             guard let self else { return }
-            let configDirectory = ClaudeMonitor.configDirectory(environment: await ShellEnvironment.shared.environment())
+            let shellEnvironment = await ShellEnvironment.shared.environment()
+            let configDirectory = ClaudeMonitor.configDirectory(environment: shellEnvironment)
             let ownStatusLine = ClaudeMonitor.hasOwnStatusLine(projectURL: project.url, configDirectory: configDirectory)
+            await trustForClaude(session.directory, environment: shellEnvironment)
             // The tab's shell still has TEZGAH_TAB_ID, so events keep coming to this tab.
             activity.canSkipPermissions = AppSettings.shared.agentsSkipPermissions
             session.run(claudeMonitor.command(
@@ -1215,6 +1234,7 @@ final class WorkspaceStore {
     @ObservationIgnored let telegram = TelegramBot()
     /// Looks at the runs' time limits every minute.
     @ObservationIgnored private var orchestraClock: Timer?
+    @ObservationIgnored private var agentLimitClock: Timer?
 
     var agentSessionsNeedingAttention: Int {
         projects.reduce(0) { count, project in

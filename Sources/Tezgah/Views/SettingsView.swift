@@ -86,14 +86,14 @@ private struct ClaudeSettings: View {
                     Text("Ajanlar onay istemesin")
                     Text("Claude ve Codex hiçbir komut ya da düzenleme için izin sormaz; orkestra ve lider ajanın işleri sende takılmadan yürür. Gözden geçirenler yine dosya düzenleyemez. Yeni oturumlarda geçerli olur.")
                 }
-            } footer: {
-                Text("Claude Code tam yetkiyle ilk açılışta kendi uyarısını bir kez gösterir; o sekmede kabul etmen gerekir.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Toggle(isOn: $settings.agentsRunUnattended) {
+                    Text("Ajanlar kendi başına yürüsün")
+                    Text("Açıldıkları klasöre önceden güvenilir, “Trust this folder?” ekranında beklemezler. Kullanım limiti dolan ajan sıfırlanmayı bekler ve kendiliğinden devam eder; Telegram bağlıysa haber verilir.")
+                }
             }
         }
         .formStyle(.grouped)
-        .frame(height: 470)
+        .frame(height: 540)
     }
 
     private func setSkipPermissions(_ on: Bool) {

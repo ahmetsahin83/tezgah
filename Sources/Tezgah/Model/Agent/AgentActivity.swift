@@ -131,6 +131,13 @@ class AgentActivity {
     var permissionMode: String?
     /// The working tree as a git tree object, taken when the tab opened, for "what did this session change".
     var baselineTree: String?
+    /// When the last hook event came, to tell an agent that went quiet from one that is working.
+    private(set) var lastEventAt: Date?
+    /// Hit its usage limit; Tezgah continues it then (`AgentLimitWatch`). Cleared when a prompt
+    /// goes in some other way.
+    var limitResumeAt: Date?
+    /// Screen watching state; see `AgentLimitWatch`.
+    @ObservationIgnored var limitWatch = LimitWatch()
 
     /// Called after every state change.
     @ObservationIgnored var onChange: ((AgentActivity) -> Void)?
@@ -147,6 +154,7 @@ class AgentActivity {
 
     /// Applies one hook event (the JSON the agent passes to its hooks on stdin).
     func handle(_ event: [String: Any]) {
+        lastEventAt = .now
         if let id = event["session_id"] as? String { sessionID = id }
         if let mode = event["permission_mode"] as? String, mode != permissionMode { permissionMode = mode }
         let name = event["hook_event_name"] as? String
@@ -160,6 +168,7 @@ class AgentActivity {
         case "UserPromptSubmit":
             currentStep = nil
             turnStartedAt = .now
+            limitResumeAt = nil
             transition(to: .working)
         case "PreToolUse":
             currentStep = Self.describeTool(event)

@@ -5,6 +5,19 @@ dayanır, sürümler [Semantic Versioning](https://semver.org/) ile numaralanır
 
 ## [Yayınlanmadı]
 
+### Eklendi
+
+- **Ajanlar kendi başına yürüsün** ayarı (varsayılan açık): ajanların klasörüne önceden güvenilir; kullanım limiti dolan
+  ajan sıfırlanmayı bekleyip kendiliğinden devam eder, Telegram'a haber verilir; bekleme orkestranın süre sınırına sayılmaz.
+
+### Düzeltildi
+
+- Veritabanı parolası Keychain'den her bağlantıda yeniden okunmuyor; ajan sorgularında macOS'un parola sorması bitti.
+  `make app`, Keychain'de bir Apple Development sertifikası varsa onunla imzalar; "Her Zaman İzin Ver" derlemeler arasında
+  kalıcı olur.
+- Tam yetkili Claude oturumları Claude Code'un "Bypass Permissions" uyarısında beklemiyor; Codex güncelleme ekranında
+  beklemiyor.
+
 ## [1.0.0] - 2026-10-18
 
 İlk açık kaynak sürüm.

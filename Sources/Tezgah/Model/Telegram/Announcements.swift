@@ -37,12 +37,33 @@ extension WorkspaceStore {
         Task { await telegram.send(text) }
     }
 
+    /// An agent at its usage limit, and when it goes on.
+    func announceLimit(_ session: TerminalSession, project: Project, line: String?, resumeAt: Date) {
+        guard telegram.isPaired, let agent = session.agent else { return }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr")
+        formatter.dateFormat = Calendar.current.isDate(resumeAt, inSameDayAs: .now) ? "HH:mm" : "d MMMM HH:mm"
+        var text = "\(project.name) · Limit doldu\n\(agentTitle(agent, in: session))"
+        if let line { text += "\n\n\(line.trimmingCharacters(in: .whitespaces))" }
+        text += "\n\n\(formatter.string(from: resumeAt)) civarında kendiliğinden devam edecek."
+        Task { await telegram.send(text) }
+    }
+
+    func announceLimitResume(_ session: TerminalSession, project: Project) {
+        guard telegram.isPaired, let agent = session.agent else { return }
+        Task { await telegram.send("\(project.name) · Devam ediyor\n\(agentTitle(agent, in: session))\n\nLimit sıfırlandı, kaldığı yerden devam etmesi söylendi.") }
+    }
+
+    private func agentTitle(_ agent: AgentActivity, in session: TerminalSession) -> String {
+        orchestraRun(of: session.id).flatMap { agentRole(session.id, in: $0) } ?? "\(agent.provider.displayName) · \(session.title)"
+    }
+
     /// An agent waiting for permission: plain ones are answered with buttons, a question or a plan
     /// needs Tezgah. Each request is told once.
     func announcePermission(_ activity: AgentActivity, in session: TerminalSession, project: Project) {
         guard telegram.isPaired, telegram.announcedRequests[session.id] != activity.requestSerial else { return }
         telegram.announcedRequests[session.id] = activity.requestSerial
-        let who = orchestraRun(of: session.id).flatMap { agentRole(session.id, in: $0) } ?? "\(activity.provider.displayName) · \(session.title)"
+        let who = agentTitle(activity, in: session)
         let text = "\(project.name) · Onay bekliyor\n\(who)\n\n\(activity.message ?? "Devam etmek için iznini istiyor.")"
         let key = "\(TelegramBot.short(session.id)):\(activity.requestSerial)"
         let buttons: [TelegramBot.Button] = switch Self.notificationCategory(for: activity) {
