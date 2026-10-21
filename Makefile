@@ -12,10 +12,14 @@ SWIFT_FLAGS := $(if $(filter release,$(CONFIG)),-debug-info-format none)
 build:
 	swift build -c $(CONFIG) $(SWIFT_FLAGS)
 
-# Signed with the first Apple Development certificate in the Keychain, if there is one: the
-# Keychain then knows the app across builds and "Always Allow" on its password prompts sticks.
-# Ad hoc otherwise, which the Keychain sees as a new app after every build.
-SIGN_IDENTITY ?= $(or $(shell security find-identity -v -p codesigning 2>/dev/null | grep -m1 -o '"Apple Development:[^"]*"' | tr -d '"'),-)
+# local.mk (not in git) may set SIGN_IDENTITY to a certificate's SHA-1 from
+# `security find-identity -v -p codesigning`.
+-include local.mk
+# Otherwise an Apple Development certificate from the Keychain, by SHA-1 (names can repeat) and
+# the same one every time: the Keychain then knows the app across builds and "Always Allow" on
+# its password prompts sticks. Ad hoc without one, which the Keychain sees as a new app after
+# every build.
+SIGN_IDENTITY ?= $(or $(shell security find-identity -v -p codesigning 2>/dev/null | grep '"Apple Development:' | awk '{print $$2}' | sort | head -1),-)
 
 # Wraps the SwiftPM executable in a signed .app bundle.
 app: build
