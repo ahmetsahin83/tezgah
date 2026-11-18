@@ -60,6 +60,8 @@ final class ClaudeActivity: AgentActivity {
     var effortLevel: String?
     /// The model picked in Tezgah for this session, until the status line reports it.
     var pendingModel: String?
+    /// The models this session's /model menu offers, once read; until then Tezgah's fallback list.
+    var availableModels: [String]?
     /// Started with `--dangerously-skip-permissions`, so "bypass permissions" is one of its modes.
     var canSkipPermissions = false
 

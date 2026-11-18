@@ -27,6 +27,13 @@ struct ClaudeSessionControlsView: View {
                 activity.permissionMode = mode.rawValue
             }
         }
+        .task(id: isIdle) {
+            // Read the models Claude Code offers once, the first time it is free to show a menu.
+            guard isIdle, activity.availableModels == nil, busy == nil else { return }
+            busy = "Modeller…"
+            await session.readClaudeModels()
+            busy = nil
+        }
         .onChange(of: activity.usage?.model) {
             if activity.usage?.model == activity.pendingModel { activity.pendingModel = nil }
         }
@@ -87,7 +94,7 @@ struct ClaudeSessionControlsView: View {
 
     private var modelMenu: some View {
         Menu {
-            ForEach(TerminalSession.models, id: \.self) { model in
+            ForEach(activity.availableModels ?? TerminalSession.fallbackModels, id: \.self) { model in
                 Button {
                     change("Model") { await session.setClaudeModel(model) }
                 } label: {

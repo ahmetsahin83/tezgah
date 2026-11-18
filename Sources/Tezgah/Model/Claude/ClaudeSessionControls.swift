@@ -55,7 +55,76 @@ extension TerminalSession {
     }
 
     static let effortLevels = ["low", "medium", "high", "xhigh", "max"]
-    static let models = ["Fable 5.1", "Opus 5.5", "Sonnet 5.5", "Haiku 5.5"]
+    /// Used until a session's own /model menu has been read (see `readClaudeModels`).
+    static let fallbackModels = ["Opus 5.5", "Fable 5.2", "Sonnet 5.5", "Haiku 5.5"]
+
+    /// One numbered option of the /model menu.
+    struct ModelMenuOption: Equatable {
+        var number: Int
+        var name: String
+        /// Marked ✔: the model in use.
+        var isCurrent = false
+        /// Marked ❯: where the cursor is.
+        var isHighlighted = false
+    }
+
+    /// The numbered options of the /model menu on screen, in order. Claude Code 2.1.327 prints
+    ///
+    ///     ❯ 1.  Default (recommended) ✔  Opus 5.5 · Best for everyday, complex tasks
+    ///       2.  Opus 5.5                 For complex work and everyday tasks
+    ///       ▸   More models
+    ///
+    /// The name ends at ✔ or at the wide gap before the description. Only the options of the last
+    /// menu on screen count, so an earlier menu still in the scrollback is not read.
+    static func modelMenuOptions(in lines: [String]) -> [ModelMenuOption] {
+        var options: [ModelMenuOption] = []
+        for line in lines.suffix(40) {
+            guard let match = line.firstMatch(of: #/^\s*(❯\s*)?(\d+)\.\s+(.+)$/#), let number = Int(match.2) else { continue }
+            if number == 1 { options.removeAll() }
+            let rest = String(match.3)
+            let name = rest.split(separator: "✔", maxSplits: 1).first
+                .flatMap { $0.split(separator: #/\s{2,}/#, maxSplits: 1).first }
+                .map { $0.trimmingCharacters(in: .whitespaces) } ?? ""
+            guard !name.isEmpty else { continue }
+            options.append(ModelMenuOption(number: number, name: name, isCurrent: rest.contains("✔"), isHighlighted: match.1 != nil))
+        }
+        return options
+    }
+
+    /// The models to offer from the /model menu's options: named models only, since "Default"
+    /// is one of them under another name.
+    static func modelNames(from options: [ModelMenuOption]) -> [String] {
+        var names: [String] = []
+        for option in options where !option.name.lowercased().hasPrefix("default") && !names.contains(option.name) {
+            names.append(option.name)
+        }
+        return names
+    }
+
+    /// The option `model` names: the one called exactly that, else the first that starts with it
+    /// ("Fable" → "Fable 5.2"), so "Fable 5" does not pick "Fable 5.2".
+    static func modelOption(named model: String, in options: [ModelMenuOption]) -> ModelMenuOption? {
+        let wanted = model.lowercased()
+        return options.first { $0.name.lowercased() == wanted }
+            ?? options.first { $0.name.lowercased().hasPrefix(wanted) }
+    }
+
+    /// Opens the /model menu, reads the models it offers and closes it again without changing
+    /// anything; stores them on the session. Nil if the menu did not open or listed nothing.
+    @discardableResult
+    func readClaudeModels() async -> [String]? {
+        guard await openMenu("/model", until: Self.isModelMenu) else { return nil }
+        let names = Self.modelNames(from: Self.modelMenuOptions(in: view.bufferLines()))
+        view.send([0x1B])
+        _ = await waitForScreen { !Self.isModelMenu($0) }
+        guard !names.isEmpty else { return nil }
+        claude?.availableModels = names
+        return names
+    }
+
+    static func isModelMenu(_ lines: [String]) -> Bool {
+        lines.contains { $0.contains("this session only") || $0.contains("Esc to cancel") }
+    }
 
     /// The mode the status line shows now.
     func claudeModeOnScreen() -> ClaudeMode? {
@@ -78,19 +147,15 @@ extension TerminalSession {
 
     /// Picks `model` in the /model menu for this session. Returns an error message on failure.
     func setClaudeModel(_ model: String) async -> String? {
-        guard await openMenu("/model", until: { $0.contains { $0.contains("this session only") || $0.contains("Esc to cancel") } }) else {
+        guard await openMenu("/model", until: Self.isModelMenu) else {
             return "The model menu did not open."
         }
-        // Options are numbered ("5. Haiku 5.5 ✔ …"); ❯ marks the highlighted one.
-        let lines = view.bufferLines().suffix(40)
-        var current: Int?
-        var target: Int?
-        for line in lines {
-            guard let match = line.firstMatch(of: #/^\s*(❯\s*)?(\d+)\.\s+(.+)$/#), let number = Int(match.2) else { continue }
-            if match.1 != nil { current = number }
-            if match.3.lowercased().hasPrefix(model.lowercased()) { target = number }
-        }
-        guard let current, let target else {
+        let options = Self.modelMenuOptions(in: view.bufferLines())
+        // The menu is open anyway: keep what it offers.
+        let names = Self.modelNames(from: options)
+        if !names.isEmpty { claude?.availableModels = names }
+        guard let current = options.first(where: \.isHighlighted)?.number,
+              let target = Self.modelOption(named: model, in: options)?.number else {
             view.send([0x1B])
             return "\(model) was not in the model menu."
         }

@@ -12,6 +12,8 @@ dayanır, sürümler [Semantic Versioning](https://semver.org/) ile numaralanır
 
 ### Düzeltildi
 
+- Model menüsü Claude Code'un kendi `/model` listesinden okunuyor; yeni çıkan modeller (ör. Fable 5.2) Tezgah
+  güncellenmeden seçilebiliyor. "Fable 5" gibi bir isim artık "Fable 5.2"yi seçmiyor.
 - Veritabanı parolası Keychain'den her bağlantıda yeniden okunmuyor; ajan sorgularında macOS'un parola sorması bitti.
   `make app`, Keychain'de bir Apple Development sertifikası varsa onunla imzalar; "Her Zaman İzin Ver" derlemeler arasında
   kalıcı olur.
